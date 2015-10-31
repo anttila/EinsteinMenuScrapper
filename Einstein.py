@@ -18,6 +18,7 @@ class Lunch():
         for x in self.food:
             print x
 
+
 def remove_tags(s):
     # Not exactly safe, but it does the trick
     data = []
@@ -37,14 +38,17 @@ def remove_tags(s):
                 start_record = x+1
     return data
 
+
 def get_date(week, day):
     year = datetime.date.today().isocalendar()[0]
     # -1 on week since strptimes has an odddateformat, it counts the first week with a monday in it as the first week,
     # this is pretty bad, but works for 2015 at least
     return datetime.datetime.strptime(str(year)+"-W"+str(week-1)+"-"+str(day+1), "%Y-W%W-%w")
 
+
 def create_lunch_timestamp(s):
     return s.replace("-","")+"T104500Z", s.replace("-","")+"T120000Z"
+
 
 def create_ics(menu):
     file = open("test.ics",'w')
@@ -68,16 +72,8 @@ def create_ics(menu):
     file.write("END:VCALENDAR\n")
     file.close()
 
-if __name__ == '__main__':
-    # TODO: Input parameter if you just want to show the menu, or create an ICS file, or both.
-    # TODO: Input parameter for filename
-    # TODO: Clean up the mess bellow and move it into one or more functions instead
-    # TODO: Add in support for parsing the week-long dishes
 
-    # Replace with local copy when doing dev stuff, so nopt to spam the server
-    response = urllib2.urlopen('http://www.butlercatering.se/einstein').read()
-    html = response.split("\n")
-
+def parse_menu(html):
     week = 0
     day_counter = -1 # -1 so that it can be incremented to 0 once the first is found
     food_counter = 0 # Find a way to remove this, only used at opne place, maybe have it look at the tag or something instead
@@ -86,7 +82,7 @@ if __name__ == '__main__':
     for x in xrange(len(html)):
         if not parsing_day:
             if "lunch-titel" in html[x]:
-                week = int(re.findall("\d+",html[x])[1]) # [0] will be 2 from h2, same with [2], [1] is week number
+                week = int(re.findall("\d+", html[x])[1]) # [0] will be 2 from h2, same with [2], [1] is week number
             elif "<div class=\"field-day\">" in html[x]:
                 parsing_day = True
                 day_counter += 1
@@ -97,7 +93,7 @@ if __name__ == '__main__':
             # This assumes that the structure is always four lines: Week day, then three lines for food
             # No we are parsing a day!
             if "</div>" in html[x]:
-                parsing_day = 0
+                parsing_day = False
             else:
                 parsed_result = remove_tags(html[x].decode('utf'))[0]
                 if food_counter == 0:
@@ -105,7 +101,18 @@ if __name__ == '__main__':
                 else:
                     menu[day_counter].food.append(parsed_result)
                 food_counter += 1
+    return week, menu
 
+
+if __name__ == '__main__':
+    # TODO: Input parameter if you just want to show the menu, or create an ICS file, or both.
+    # TODO: Input parameter for filename
+    # TODO: Add in support for parsing the week-long dishes
+
+    # Replace with local copy when doing dev stuff, so nopt to spam the server
+    response = urllib2.urlopen('http://www.butlercatering.se/einstein').read()
+    html = response.split("\n")
+    week, menu = parse_menu(html)
     create_ics(menu)
     #for x in menu:
     #    x.show()
