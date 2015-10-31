@@ -4,6 +4,7 @@
 import urllib2
 import re
 import datetime
+import sys
 
 
 class Lunch():
@@ -50,8 +51,8 @@ def create_lunch_timestamp(s):
     return s.replace("-","")+"T104500Z", s.replace("-","")+"T120000Z"
 
 
-def create_ics(menu):
-    file = open("test.ics",'w')
+def create_ics(menu, filename):
+    file = open(filename, 'w')
     file.write("BEGIN:VCALENDAR\n")
     file.write("VERSION:2.0\n")
     file.write("PRODID:-//Not sure/what to write//here//EN\n") # TODO
@@ -90,8 +91,8 @@ def parse_menu(html):
                 menu.append(Lunch())
                 menu[day_counter].date = str(get_date(week, day_counter)).split(" ")[0]
         else:
+            # Now we are parsing a day!
             # This assumes that the structure is always four lines: Week day, then three lines for food
-            # No we are parsing a day!
             if "</div>" in html[x]:
                 parsing_day = False
             else:
@@ -104,17 +105,56 @@ def parse_menu(html):
     return week, menu
 
 
-if __name__ == '__main__':
-    # TODO: Input parameter if you just want to show the menu, or create an ICS file, or both.
-    # TODO: Input parameter for filename
+def parse_argv():
+    print_ics = True
+    output_filename = "Einstein-menu.ics"
+    verbose = False
+    ignore = 0
+    error = False
+    for x in xrange(1,len(sys.argv)):
+        if ignore != 0:
+            # this is done for -o argument, so that it doesn't read the next part, since we have already tackled it
+            ignore -= 1
+            continue
+        elif (sys.argv[x] == "-o" or sys.argv[x] == "--output") and 1+x < len(sys.argv):
+            ignore += 1
+            output_filename = sys.argv[x+1]
+        elif sys.argv[x] == "-v" or sys.argv[x] == "--verbose":
+            verbose = True
+        elif sys.argv[x] == "-ds" or sys.argv[x] == "--disable-ics":
+            print_ics = False
+        elif sys.argv[x] == "-h" or sys.argv[x] == "--help":
+            print ""
+            print "Einstein menu scrapper is a small script developed to display and/or create "
+            print "ICS-files for the lunch resturant Einstein in Gothenburg. Currently the script"
+            print "supports the following commands:"
+            print ""
+            print " -o filename, --output filename\t specifies the output for the calendar file"
+            print " -v, --verbose\t\t\t the menu will be printed to stdout"
+            print " -ds, --disable-cs \t\t disables the creation of ICS-files"
+            print ""
+            print "Default flags corresponds to: -o Einstein-menu.ics"
+        else:
+            print "Invalid input parameter, exiting"
+            error = True
+            break
+    return print_ics, output_filename, verbose, error
+
+def main():
+    print_ics, output_filename, verbose, error = parse_argv()
+    if error:
+       return
     # TODO: Add in support for parsing the week-long dishes
 
     # Replace with local copy when doing dev stuff, so nopt to spam the server
     response = urllib2.urlopen('http://www.butlercatering.se/einstein').read()
     html = response.split("\n")
     week, menu = parse_menu(html)
-    create_ics(menu)
-    #for x in menu:
-    #    x.show()
+    if print_ics:
+        create_ics(menu, output_filename)
+    if verbose:
+        for x in menu:
+            x.show()
 
-
+if __name__ == '__main__':
+    main()
