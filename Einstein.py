@@ -42,13 +42,13 @@ def remove_tags(s):
 
 def get_date(week, day):
     year = datetime.date.today().isocalendar()[0]
-    # -1 on week since strptimes has an odddateformat, it counts the first week with a monday in it as the first week,
+    # -1 on week since strptimes has an odd dateformat, it counts the first week with a monday in it as the first week,
     # this is pretty bad, but works for 2015 at least
     return datetime.datetime.strptime(str(year)+"-W"+str(week-1)+"-"+str(day+1), "%Y-W%W-%w")
 
 
 def create_lunch_timestamp(s):
-    return s.replace("-","")+"T104500Z", s.replace("-","")+"T120000Z"
+    return s.replace("-", "")+"T104500Z", s.replace("-","")+"T120000Z"
 
 
 def create_ics(menu, filename):
@@ -140,10 +140,11 @@ def parse_argv():
             break
     return print_ics, output_filename, verbose, error
 
+
 def main():
     print_ics, output_filename, verbose, error = parse_argv()
     if error:
-       return
+        return
     # TODO: Add in support for parsing the week-long dishes
 
     # Replace with local copy when doing dev stuff, so nopt to spam the server
@@ -153,8 +154,11 @@ def main():
     if print_ics:
         create_ics(menu, output_filename)
     if verbose:
+        print "Menu for Eintein week",
+        print week
         for x in menu:
             x.show()
+            print ""
 
 if __name__ == '__main__':
     main()
